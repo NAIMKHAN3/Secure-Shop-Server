@@ -2,6 +2,7 @@ const expree = require('express');
 const cors = require('cors');
 const app = expree();
 require('dotenv').config();
+const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
@@ -38,7 +39,7 @@ async function run() {
             }
         })
 
-        app.post('/user', async (req, res) => {
+        app.post('/register', async (req, res) => {
             try {
                 const user = req.body;
                 const findUser = await userCollection.findOne({ email: user.email });
@@ -46,10 +47,27 @@ async function run() {
                     return res.json({ status: false, message: "user already added by database" })
                 }
                 const result = await userCollection.insertOne(user);
-                res.json({ status: true, data: result })
+                const token = jwt.sign(user.email, process.env.TOKEN)
+                res.json({ status: true, data: result, token: token })
             }
             catch {
                 res.json({ status: false, message: "user added failed" })
+            }
+        })
+
+        app.get('/jwt', async (req, res) => {
+            try {
+                const email = req.query.email;
+                const findUser = await userCollection.findOne({ email: email });
+                if (findUser) {
+                    const token = jwt.sign({ email }, process.env.TOKEN)
+                    res.json({ status: true, token: token })
+                }
+
+
+            }
+            catch {
+                res.json({ status: false, message: "somthing went wrong" })
             }
         })
 

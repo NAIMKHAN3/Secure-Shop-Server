@@ -27,12 +27,15 @@ async function run() {
     try {
 
         const userCollection = client.db("secure-shop").collection("users");
+        const productCollection = client.db("secure-shop").collection("products");
 
 
         app.get('/users', async (req, res) => {
             try {
+
                 const result = await userCollection.find({}).toArray();
                 res.json({ status: true, data: result })
+
             }
             catch {
                 res.json({ status: false, message: "findn't user collection" })
@@ -42,34 +45,35 @@ async function run() {
         app.post('/register', async (req, res) => {
             try {
                 const user = req.body;
-                const findUser = await userCollection.findOne({ email: user.email });
-                if (findUser) {
-                    return res.json({ status: false, message: "user already added by database" })
-                }
-                const result = await userCollection.insertOne(user);
                 const token = jwt.sign(user.email, process.env.TOKEN)
+                const findUser = await userCollection.findOne({ email: user.email });
+
+                if (findUser) {
+                    return res.json({ status: false, message: "user already added by database", token: token })
+                }
+
+                const result = await userCollection.insertOne(user);
                 res.json({ status: true, data: result, token: token })
+
             }
+
             catch {
                 res.json({ status: false, message: "user added failed" })
             }
-        })
-
-        app.get('/jwt', async (req, res) => {
+        });
+        app.post('/add-product', async (req, res) => {
             try {
-                const email = req.query.email;
-                const findUser = await userCollection.findOne({ email: email });
-                if (findUser) {
-                    const token = jwt.sign({ email }, process.env.TOKEN)
-                    res.json({ status: true, token: token })
+                const product = req.body;
+                if (product) {
+                    const result = await productCollection.insertOne(product);
+                    res.json({ status: true, data: result })
                 }
-
-
             }
             catch {
-                res.json({ status: false, message: "somthing went wrong" })
+                res.json({ status: false, message: "Product added failed please try again" })
             }
-        })
+        });
+
 
     }
     catch (error) {

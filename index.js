@@ -4,7 +4,7 @@ const app = expree();
 require('dotenv').config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.use(cors());
 app.use(expree.json())
@@ -39,6 +39,32 @@ async function run() {
             }
             catch {
                 res.json({ status: false, message: "findn't user collection" })
+            }
+        })
+
+        app.get('/products', async (req, res) => {
+            try {
+
+                const result = await productCollection.find({}).toArray();
+                res.json({ status: true, data: result })
+
+            }
+            catch {
+                res.json({ status: false, message: "findn't products collection" })
+            }
+        });
+
+        app.get('/product/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+                const find = { _id: new ObjectId(id) }
+                console.log(id)
+                const result = await productCollection.findOne(find);
+                res.json({ status: true, data: result })
+
+            }
+            catch {
+                res.json({ status: false, message: "findn't product collection" })
             }
         })
 

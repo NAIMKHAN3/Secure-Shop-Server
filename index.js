@@ -2,13 +2,12 @@ const expree = require('express');
 const cors = require('cors');
 const app = expree();
 require('dotenv').config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
 app.use(cors());
 app.use(expree.json())
-
 
 app.get('/', (req, res) => {
     res.json({ status: true, message: 'Secure shop server is running' })
@@ -29,6 +28,7 @@ async function run() {
         const userCollection = client.db("secure-shop").collection("users");
         const productCollection = client.db("secure-shop").collection("products");
         const cardCollection = client.db("secure-shop").collection("card");
+        const paymentCollection = client.db("secure-shop").collection("payment");
 
 
         app.get('/users', async (req, res) => {
@@ -71,10 +71,8 @@ async function run() {
         app.get('/card-product/:id', async (req, res) => {
             try {
                 const id = req.params.id;
-                console.log(id)
                 const find = { _id: new ObjectId(id) }
                 const result = await cardCollection.findOne(find);
-                console.log(result)
                 res.json({ status: true, data: result })
 
             }
@@ -85,10 +83,8 @@ async function run() {
         app.get('/card-products/:email', async (req, res) => {
             try {
                 const email = req?.params?.email;
-                console.log(email)
                 if (email) {
                     const result = await cardCollection.find({ email }).toArray();
-                    console.log(result)
                     res.json({ status: true, data: result })
                 } else {
                     res.json({ status: false, message: "Please login your account" })
@@ -132,7 +128,6 @@ async function run() {
                 const product = req.body;
                 const { model } = product
                 const findProduct = await cardCollection.findOne({ model, });
-                console.log(findProduct)
                 if (findProduct) {
                     return res.json({ status: false, message: "Product already added by card" })
                 }
@@ -145,6 +140,38 @@ async function run() {
                 res.json({ status: false, message: "Product added failed please try again" })
             }
         });
+
+        app.post("/create-payment-intent", async (req, res) => {
+            const product = req.body;
+            console.log(product)
+            const amount = parseFloat(product.totalAmount) * 100;
+            console.log(amount)
+            if (product && amount) {
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount: amount,
+                    currency: "bdt",
+                    "payment_method_types": [
+                        "card"
+                    ]
+                });
+                return res.send({
+                    clientSecret: paymentIntent.client_secret,
+                });
+            }
+
+            res.send({ status: false, message: "amount not found" })
+        });
+
+        app.post('/payment-info', async (req, res) => {
+            try {
+                const info = req.body;
+                const result = await paymentCollection.insertOne(info);
+                res.send(result)
+            }
+            catch {
+                res.send({ status: false, massage: 'payment info not added a database' })
+            }
+        })
     }
     catch (error) {
         console.log(error)

@@ -14,6 +14,24 @@ app.get('/', (req, res) => {
 });
 
 
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers?.authorization;
+
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    const token = authHeader.split(' ')[1]
+    console.log(token)
+    jwt.verify(token, process.env.TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'unauthorized access' })
+        }
+        req.decoded = decoded;
+        console.log(decoded);
+    })
+
+    next();
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.ujhfrio.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
@@ -55,7 +73,7 @@ async function run() {
             }
         });
 
-        app.get('/product/:id', async (req, res) => {
+        app.get('/product/:id', verifyJWT, async (req, res) => {
             try {
                 const id = req.params.id;
                 const find = { _id: new ObjectId(id) }
@@ -68,7 +86,7 @@ async function run() {
             }
         });
 
-        app.get('/card-product/:id', async (req, res) => {
+        app.get('/card-product/:id', verifyJWT, async (req, res) => {
             try {
                 const id = req.params.id;
                 const find = { _id: new ObjectId(id) }
@@ -80,7 +98,7 @@ async function run() {
                 res.json({ status: false, message: "findn't product collection" })
             }
         });
-        app.get('/card-products/:email', async (req, res) => {
+        app.get('/card-products/:email', verifyJWT, async (req, res) => {
             try {
                 const email = req?.params?.email;
                 if (email) {
@@ -111,7 +129,7 @@ async function run() {
                 res.json({ status: false, message: "user added failed" })
             }
         });
-        app.post('/add-product', async (req, res) => {
+        app.post('/add-product', verifyJWT, async (req, res) => {
             try {
                 const product = req.body;
                 if (product) {
@@ -123,7 +141,7 @@ async function run() {
                 res.json({ status: false, message: "Product added failed please try again" })
             }
         });
-        app.post('/add-to-card', async (req, res) => {
+        app.post('/add-to-card', verifyJWT, async (req, res) => {
             try {
                 const product = req.body;
                 const { model } = product
@@ -141,7 +159,7 @@ async function run() {
             }
         });
 
-        app.post("/create-payment-intent", async (req, res) => {
+        app.post("/create-payment-intent", verifyJWT, async (req, res) => {
             const product = req.body;
             console.log(product)
             const amount = parseFloat(product.totalAmount) * 100;
@@ -162,7 +180,7 @@ async function run() {
             res.send({ status: false, message: "amount not found" })
         });
 
-        app.post('/payment-info', async (req, res) => {
+        app.post('/payment-info', verifyJWT, async (req, res) => {
             try {
                 const info = req.body;
                 const result = await paymentCollection.insertOne(info);

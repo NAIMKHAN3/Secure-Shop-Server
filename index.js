@@ -60,6 +60,18 @@ async function run() {
                 res.json({ status: false, message: "findn't user collection" })
             }
         })
+        app.get('/user/:email', async (req, res) => {
+            try {
+                const email = req.params.email;
+                console.log(email)
+                const result = await userCollection.findOne({ email });
+                res.json({ status: true, data: result })
+
+            }
+            catch {
+                res.json({ status: false, message: "findn't user collection" })
+            }
+        })
 
         app.get('/products', async (req, res) => {
             try {

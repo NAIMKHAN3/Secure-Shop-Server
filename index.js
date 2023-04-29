@@ -1,13 +1,21 @@
-const expree = require('express');
+const express = require('express');
 const cors = require('cors');
-const app = expree();
+const app = express();
 require('dotenv').config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
+const corsOptions = {
+    origin: '*',
+    Credentials: true,
+    optionSuccessStatus: 200,
+}
+
 app.use(cors());
-app.use(expree.json())
+app.use(express.json());
+
 
 app.get('/', (req, res) => {
     res.json({ status: true, message: 'Secure shop server is running' })

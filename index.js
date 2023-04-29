@@ -21,13 +21,11 @@ function verifyJWT(req, res, next) {
         return res.status(401).send({ message: 'unauthorized access' })
     }
     const token = authHeader.split(' ')[1]
-    console.log(token)
     jwt.verify(token, process.env.TOKEN, function (err, decoded) {
         if (err) {
             return res.status(403).send({ message: 'unauthorized access' })
         }
         req.decoded = decoded;
-        console.log(decoded);
     })
 
     next();
@@ -63,7 +61,6 @@ async function run() {
         app.get('/user/:email', async (req, res) => {
             try {
                 const email = req.params.email;
-                console.log(email)
                 const result = await userCollection.findOne({ email });
                 res.json({ status: true, data: result })
 
@@ -173,9 +170,7 @@ async function run() {
 
         app.post("/create-payment-intent", verifyJWT, async (req, res) => {
             const product = req.body;
-            console.log(product)
             const amount = parseFloat(product.totalAmount) * 100;
-            console.log(amount)
             if (product && amount) {
                 const paymentIntent = await stripe.paymentIntents.create({
                     amount: amount,
